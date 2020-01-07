@@ -7,6 +7,7 @@ const databaseConfiguration = require('./utilities/database');
 const adminRoutes = require('./routes/admin');
 const categoriesRoutes = require('./routes/categories');
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user')
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 app.use('/admin', adminRoutes);
 app.use('/categories', categoriesRoutes)
 app.use('/auth', authRoutes);
+app.use('/user', userRoutes);
 
 mongoose
     .connect(databaseConfiguration.connectionString, {
