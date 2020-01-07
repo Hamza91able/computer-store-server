@@ -4,6 +4,6 @@ const adminController = require('../controllers/admin');
 
 const router = express.Router();
 
-router.get('/get-categories', adminController.getCategories);
+router.post('/add-category', adminController.addCategory);
 
 module.exports = router;

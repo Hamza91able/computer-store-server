@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const databaseConfiguration = require('./utilities/database');
 
 const adminRoutes = require('./routes/admin');
+const categoriesRoutes = require('./routes/categories');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/admin', adminRoutes);
+app.use('/categories', categoriesRoutes)
 
 mongoose
     .connect(databaseConfiguration.connectionString, {
