@@ -16,3 +16,21 @@ exports.getCategories = (req, res, next) => {
             })
         })
 }
+
+exports.getSubCategoriesAndBrands = (req,res,next) => {
+    const parentCategory = req.params.category;
+
+    Categories
+        .findOne({name: parentCategory})
+        .then(category => {
+            res.status(200).json({
+                subCategories: category.subCategories,
+                brands: category.brands,
+            })
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: "Internal Server Error",
+            })
+        })
+}
