@@ -71,3 +71,38 @@ exports.addSubCategory = (req, res, next) => {
             }
         })
 }
+
+exports.addBrands = (req, res, next) => {
+    const parentCategory = req.body.parentCategory;
+    const brand = req.body.brand.toLowerCase();
+
+    Categories
+        .findOne({ name: parentCategory })
+        .then(category => {
+            if (category.brands.indexOf(brand) !== -1) {
+                const error = new Error("Brand already exists");
+                error.statusCode = 403;
+                throw error;
+            }
+
+            category.brands.push(brand);
+            return category.save();
+        })
+        .then(result => {
+            res.status(201).json({
+                message: "Brand Added",
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            if (err.statusCode === 403) {
+                res.status(200).json({
+                    message: 'Brand already exists',
+                })
+            } else {
+                res.status(500).json({
+                    message: 'Internal Server Error',
+                });
+            }
+        })
+}

@@ -9,6 +9,10 @@ const categoriesSchema = new Schema({
     subCategories: {
         type: Array,
         required: false,
+    },
+    brands: {
+        type: Array,
+        required: false,
     }
 });
 
