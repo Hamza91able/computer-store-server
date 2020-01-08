@@ -6,5 +6,6 @@ const isAuth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.post('/add-category', isAuth, adminController.addCategory);
+router.post('/add-sub-category', isAuth, adminController.addSubCategory);
 
 module.exports = router;

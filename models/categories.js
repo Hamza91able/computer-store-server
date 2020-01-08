@@ -5,6 +5,10 @@ const categoriesSchema = new Schema({
     name: {
         type: String,
         required: true
+    },
+    subCategories: {
+        type: Array,
+        required: false,
     }
 });
 
