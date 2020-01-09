@@ -1,4 +1,5 @@
 const Categories = require('../models/categories');
+const Product = require('../models/products');
 
 exports.addCategory = (req, res, next) => {
     const categoryName = req.body.name;
@@ -104,5 +105,56 @@ exports.addBrands = (req, res, next) => {
                     message: 'Internal Server Error',
                 });
             }
+        })
+}
+
+exports.postProduct = (req, res, next) => {
+    console.log(req.files);
+    const title = req.body.title;
+    const category = req.body.category;
+    const subCategory = req.body.subCategory;
+    const brand = req.body.brand;
+    const bulletPoints = req.body.values;
+    const price = req.body.price;
+    const stock = req.body.stock;
+    const overview = req.body.overview;
+    const specifications = req.body.specifications;
+    const soldAndShippedBy = req.body.soldAndShippedBy;
+    const shippingCost = req.body.shippingCost;
+    const shippingInKarachi = req.body.shippingCostInKarachi;
+    let imageUrls = [];
+    req.files.forEach(file => {
+        imageUrls.push(file.path.replace("\\", "/"));
+    })
+    console.log(imageUrls);
+    
+
+    const product = new Product({
+        title,
+        category,
+        subCategory,
+        brand,
+        bulletPoints,
+        price,
+        stock,
+        overview,
+        specifications,
+        soldAndShippedBy,
+        shippingCost,
+        shippingInKarachi
+    });
+
+    product
+        .save()
+        .then(result => {
+            res.status(201).json({
+                message: 'Product saved in database',
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
         })
 }

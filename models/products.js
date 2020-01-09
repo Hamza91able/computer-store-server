@@ -11,11 +11,11 @@ const productSchema = new Schema({
         required: true,
     },
     subCategory: {
-        type: Array,
+        type: String,
         required: false,
     },
     brand: {
-        type: Array,
+        type: String,
         required: false
     },
     bulletPoints: {
