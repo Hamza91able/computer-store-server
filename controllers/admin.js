@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const Categories = require('../models/categories');
 const Product = require('../models/products');
+const AppbarCategories = require('../models/appbarCategories');
 
 exports.addCategory = (req, res, next) => {
     const categoryName = req.body.name;
@@ -198,4 +199,53 @@ exports.postProduct = (req, res, next) => {
             })
         })
     })
+}
+
+exports.addAppbarCategories = (req, res, next) => {
+    const name = req.body.cateogryName;
+
+    const appbarCategories = new AppbarCategories({
+        name,
+    })
+
+    Categories
+        .findOne({ name: name })
+        .then(category => {
+            if (!category) {
+                const error = new Error('This is not a category');
+                error.statusCode = 400;
+                throw error;
+            }
+
+            return AppbarCategories.findOne({ name: name })
+        })
+        .then(result => {
+            if (result) {
+                const error = new Error('Category already exists');
+                error.statusCode = 403;
+                throw error;
+            }
+            return appbarCategories.save()
+        })
+        .then(result => {
+            res.status(201).json({
+                message: "Category added to appbar"
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            if (err.statusCode === 400) {
+                res.status(400).json({
+                    message: "This is not a category",
+                });
+            } else if (err.statusCode === 403) {
+                res.status(403).json({
+                    message: "Category already exists",
+                });
+            } else {
+                res.status(500).json({
+                    message: "Internal Server Error",
+                });
+            }
+        });
 }
