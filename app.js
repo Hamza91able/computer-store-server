@@ -10,7 +10,7 @@ const adminRoutes = require('./routes/admin');
 const categoriesRoutes = require('./routes/categories');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user')
-// const productRoutes = require('./routes/products');
+const productRoutes = require('./routes/products');
 
 const app = express();
 
@@ -52,7 +52,7 @@ app.use('/admin', adminRoutes);
 app.use('/categories', categoriesRoutes)
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
-// app.use('/products', productRoutes);
+app.use('/products', productRoutes);
 
 mongoose
     .connect(databaseConfiguration.connectionString, {
