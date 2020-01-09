@@ -8,6 +8,6 @@ const router = express.Router();
 router.post('/add-category', isAuth, adminController.addCategory);
 router.post('/add-sub-category', isAuth, adminController.addSubCategory);
 router.post('/add-brand', isAuth, adminController.addBrands);
-router.post('/post-product', adminController.postProduct);
+router.post('/post-product', isAuth, adminController.postProduct);
 
 module.exports = router;

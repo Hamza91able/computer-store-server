@@ -1,3 +1,7 @@
+const axios = require('axios');
+const FormData = require('form-data');
+const fs = require('fs');
+
 const Categories = require('../models/categories');
 const Product = require('../models/products');
 
@@ -109,12 +113,11 @@ exports.addBrands = (req, res, next) => {
 }
 
 exports.postProduct = (req, res, next) => {
-    console.log(req.files);
     const title = req.body.title;
     const category = req.body.category;
     const subCategory = req.body.subCategory;
     const brand = req.body.brand;
-    const bulletPoints = req.body.values;
+    const bulletPoints = req.body.bulletPoints;
     const price = req.body.price;
     const stock = req.body.stock;
     const overview = req.body.overview;
@@ -126,35 +129,73 @@ exports.postProduct = (req, res, next) => {
     req.files.forEach(file => {
         imageUrls.push(file.path.replace("\\", "/"));
     })
-    console.log(imageUrls);
-    
+    let imageUrlsFromFirebase = [];
 
-    const product = new Product({
-        title,
-        category,
-        subCategory,
-        brand,
-        bulletPoints,
-        price,
-        stock,
-        overview,
-        specifications,
-        soldAndShippedBy,
-        shippingCost,
-        shippingInKarachi
-    });
+    if (req.files.length === 0) {
+        const error = new Error("No images uploaded");
+        error.statusCode = 403;
+        throw error;
+    }
 
-    product
-        .save()
-        .then(result => {
-            res.status(201).json({
-                message: 'Product saved in database',
-            });
+    imageUrls.forEach(image => {
+        const form = new FormData();
+        form.append('image', fs.createReadStream(image));
+        const formHeaders = form.getHeaders();
+        axios({
+            url: `https://us-central1-computer-store-264522.cloudfunctions.net/uploadFile`,
+            method: "POST",
+            data: form,
+            headers: {
+                ...formHeaders,
+            },
+        }).then(response => {
+            imageUrlsFromFirebase.push(response.data.imageUrl);
+        }).then(() => {
+            if (imageUrlsFromFirebase.length === imageUrls.length) {
+                const product = new Product({
+                    title,
+                    category,
+                    subCategory,
+                    brand,
+                    bulletPoints,
+                    price,
+                    pictures: imageUrlsFromFirebase,
+                    stock,
+                    overview,
+                    specifications,
+                    soldAndShippedBy,
+                    shippingCost,
+                    shippingInKarachi
+                });
+
+                product
+                    .save()
+                    .then(result => {
+                        imageUrls.forEach(image => {
+                            fs.unlink(image, (err) => {
+                                if (err) {
+                                    console.error(err)
+                                    return
+                                }
+                            })
+
+                            //file removed
+                        })
+                        console.log('Product saved in database.');
+                        res.status(201).json({
+                            message: 'Product saved in database',
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    })
+            }
+        }).catch(err => {
+            res.status(200).json({
+                message: 'Error Occoured. No images provided',
+            })
         })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                message: 'Internal Server Error',
-            });
-        })
+    })
 }
