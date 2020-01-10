@@ -1,3 +1,6 @@
+const stripePrivateKey = require('../utilities/stripePrivateKey');
+const stripe = require("stripe")(stripePrivateKey.privateKey);
+
 const { validationResult } = require('express-validator');
 const User = require('../models/user');
 const Products = require('../models/products');
@@ -243,4 +246,28 @@ exports.postOrder = (req, res, next) => {
                     });
                 })
         });
+}
+
+exports.charge = async (req, res, next) => {
+    // console.log(req.body);
+
+    try {
+        let status = await stripe.charges.create({
+            amount: 2000,
+            currency: "usd",
+            description: "test product 2000",
+            source: req.body.source,
+            receipt_email: 'm.hamzakhan91able@gmail.com'
+        });
+
+        console.log(status);
+
+        res.status(200).json({
+            message: status
+        })
+    } catch (err) {
+        console.log(err);
+        res.status(500).end();
+    }
+
 }

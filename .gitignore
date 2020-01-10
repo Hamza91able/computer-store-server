@@ -1,2 +1,3 @@
 node_modules
 utilities/database.js
+utilities/stripePrivateKey.js
