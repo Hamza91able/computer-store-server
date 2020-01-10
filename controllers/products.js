@@ -1,6 +1,8 @@
 const { validationResult } = require('express-validator');
 const User = require('../models/user');
 const Products = require('../models/products');
+const Order = require('../models/order');
+
 
 exports.getProductByCategory = (req, res, next) => {
     const categoryName = req.params.categoryName;
@@ -177,7 +179,7 @@ exports.getCart = (req, res, next) => {
         });
 }
 
-exports.postDeleteFromCart = (req,res,next) => {
+exports.postDeleteFromCart = (req, res, next) => {
     const productId = req.body.prodId;
 
     User
@@ -195,5 +197,50 @@ exports.postDeleteFromCart = (req,res,next) => {
             res.status(500).json({
                 message: 'Internal Server Error',
             });
+        });
+}
+
+exports.postOrder = (req, res, next) => {
+
+    User
+        .findById(req.userId)
+        .then(user => {
+            return user
+                .populate('cart.items.productId')
+                .execPopulate()
+                .then(user => {
+                    const products = user.cart.items.map(i => {
+                        return { quantity: i.quantity, product: { ...i.productId._doc } };
+                    });
+                    const order = new Order({
+                        user: {
+                            userId: user._id,
+                            fullName: user.name,
+                            addressLine1: user.addressLine1,
+                            addressLine2: user.addressLine2,
+                            city: user.city,
+                            state: user.state,
+                            zip: user.zip,
+                            country: 'Pakistan',
+                            phoneNumber: user.phoneNumber,
+                            delieveryInformation: user.delieveryInformation,
+                        },
+                        products: products,
+                    });
+                    return order.save();
+                })
+                .then(result => {
+                    return user.clearCart();
+                })
+                .then(result => {
+                    res.status(201).json({
+                        message: 'Order Saved',
+                    });
+                })
+                .catch(err => {
+                    res.status(500).json({
+                        message: 'Internal Server Error',
+                    });
+                })
         });
 }

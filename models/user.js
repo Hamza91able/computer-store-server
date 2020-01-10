@@ -18,6 +18,42 @@ const userSchema = new Schema({
         type: Boolean,
         required: true
     },
+    fullName: {
+        type: String,
+        required: false,
+    },
+    addressLine1: {
+        type: String,
+        required: false,
+    },
+    addressLine2: {
+        type: String,
+        required: false,
+    },
+    city: {
+        type: String,
+        required: false,
+    },
+    state: {
+        type: String,
+        required: false,
+    },
+    zip: {
+        type: String,
+        required: false,
+    },
+    country: {
+        type: String,
+        required: false,
+    },
+    phoneNumber: {
+        type: String,
+        required: false,
+    },
+    delieveryInformation: {
+        type: String,
+        required: false,
+    },
     cart: {
         items: [{
             productId: {
