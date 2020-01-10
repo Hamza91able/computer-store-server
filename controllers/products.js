@@ -176,3 +176,24 @@ exports.getCart = (req, res, next) => {
             });
         });
 }
+
+exports.postDeleteFromCart = (req,res,next) => {
+    const productId = req.body.prodId;
+
+    User
+        .findById(req.userId)
+        .then(user => {
+            return user.removeFromCart(productId)
+        })
+        .then(result => {
+            res.status(201).json({
+                message: "Deleted from cart",
+            })
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        });
+}

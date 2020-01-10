@@ -20,5 +20,6 @@ router.post('/post-cart',
     productController.postCart
 );
 router.get('/get-cart', isAuth, productController.getCart);
+router.post('/post-delete-from-cart', isAuth, productController.postDeleteFromCart);
 
 module.exports = router;
