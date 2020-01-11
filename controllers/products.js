@@ -249,25 +249,117 @@ exports.postOrder = (req, res, next) => {
 }
 
 exports.charge = async (req, res, next) => {
-    // console.log(req.body);
+    const name = req.body.name;
+    const cardNumber = req.body.cardNumber;
+    const month = req.body.month;
+    const year = req.body.year;
+    const cvv = req.body.cvv;
+    const addressLine1 = req.body.addressLine1;
+    const addressLine2 = req.body.addressLine2;
+    const city = req.body.city;
+    const state = req.body.state;
+    const zip = req.body.zip;
+    let shippingCost = 0;
+    let price = 0;
+    let quantity = 0;
 
-    try {
-        let status = await stripe.charges.create({
-            amount: 2000,
-            currency: "usd",
-            description: "test product 2000",
-            source: req.body.source,
-            receipt_email: 'm.hamzakhan91able@gmail.com'
+    User
+        .findById(req.userId)
+        .then(user => {
+            return user
+                .populate('cart.items.productId')
+                .execPopulate()
+                .then(user => {
+                    const products = user.cart.items.map(i => {
+                        if (city === "Karachi") {
+                            shippingCost = shippingCost + i.productId.shippingInKarachi
+                        } else {
+                            shippingCost = shippingCost + i.productId.shippingCost
+                        }
+                        quantity = i.quantity;
+                        price = price + (i.productId.price * quantity);
+                        return { quantity: i.quantity, product: { ...i.productId._doc } };
+                    });
+                    const order = new Order({
+                        user: {
+                            userId: user._id,
+                            fullName: user.name,
+                            addressLine1: user.addressLine1,
+                            addressLine2: user.addressLine2,
+                            city: user.city,
+                            state: user.state,
+                            zip: user.zip,
+                            country: 'Pakistan',
+                            phoneNumber: user.phoneNumber,
+                            delieveryInformation: user.delieveryInformation,
+                        },
+                        products: products,
+                        shippingCost: shippingCost,
+                        totalPrice: price + shippingCost
+                    });
+                    return order.save();
+                })
+                .then(result => {
+                    stripe.tokens.create(
+                        {
+                            card: {
+                                number: cardNumber,
+                                exp_month: month,
+                                exp_year: year,
+                                cvc: cvv,
+                                name: name,
+                                address_line1: addressLine1,
+                                address_line2: addressLine2,
+                                address_city: city,
+                                address_state: state,
+                                address_zip: zip,
+                                address_country: 'Pakistan'
+                            },
+                        },
+                        function (err, token) {
+                            if (err) {
+                                console.log(err);
+                            }
+                            console.log(token.id);
+                            stripe.charges.create(
+                                {
+                                    amount: (price + shippingCost) * 100,
+                                    currency: 'pkr',
+                                    source: token.id,
+                                    description: 'Product(s) Purchased from Computer Store',
+                                    metadata: {
+                                        order_id: result._id.toString(),
+                                    }
+                                },
+                                function (err, charge) {
+                                    if (err) {
+                                        console.log(err);
+                                    }
+                                    if (charge) {
+                                        user
+                                            .clearCart()
+                                            .then(result => {
+                                                res.status(201).json({
+                                                    message: 'Order Placed',
+                                                });
+                                            })
+                                            .catch(err => {
+                                                console.log(err);
+                                                res.status(500).json({
+                                                    message: 'Internal Server Error',
+                                                });
+                                            })
+                                    }
+                                }
+                            );
+                        }
+                    );
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        message: 'Internal Server Error',
+                    });
+                })
         });
-
-        console.log(status);
-
-        res.status(200).json({
-            message: status
-        })
-    } catch (err) {
-        console.log(err);
-        res.status(500).end();
-    }
-
 }

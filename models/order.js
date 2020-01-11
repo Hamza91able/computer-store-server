@@ -54,6 +54,14 @@ const orderSchema = new Schema({
             type: String,
             required: false,
         }
+    },
+    shippingCost: {
+        type: Number,
+        required: true,
+    },
+    totalPrice: {
+        type: Number,
+        required: true,
     }
 });
 
