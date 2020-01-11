@@ -14,7 +14,7 @@ exports.signup = (req, res, next) => {
     }
 
     const name = req.body.name;
-    const email = req.body.email;
+    const email = req.body.email.toLowerCase();
     const password = req.body.password;
 
     bcrypt
@@ -41,7 +41,7 @@ exports.signup = (req, res, next) => {
 }
 
 exports.checkEmail = (req, res, next) => {
-    const email = req.body.email;
+    const email = req.body.email.toLowerCase();
     User
         .findOne({ email: email })
         .then(user => {
@@ -69,7 +69,7 @@ exports.checkEmail = (req, res, next) => {
 }
 
 exports.login = (req, res, next) => {
-    const email = req.body.email;
+    const email = req.body.email.toLowerCase();
     const password = req.body.password;
     let loadedUser = '';
 

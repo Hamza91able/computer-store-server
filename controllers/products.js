@@ -205,6 +205,7 @@ exports.postDeleteFromCart = (req, res, next) => {
 
 exports.postOrder = (req, res, next) => {
 
+
     User
         .findById(req.userId)
         .then(user => {
@@ -249,6 +250,21 @@ exports.postOrder = (req, res, next) => {
 }
 
 exports.charge = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        console.log("Validation Failed");
+        console.log(errors);
+        // const error = new Error()
+        const errorArray = [];
+        errors.errors.forEach(error => {
+            if (error.msg !== "Invalid value")
+                errorArray.push(error.msg)
+        })
+        res.status(422).json({
+            message: errorArray,
+        })
+    }
+
     const name = req.body.name;
     const cardNumber = req.body.cardNumber;
     const month = req.body.month;
@@ -262,65 +278,70 @@ exports.charge = async (req, res, next) => {
     let shippingCost = 0;
     let price = 0;
     let quantity = 0;
+    console.log(req.body)
 
-    User
-        .findById(req.userId)
-        .then(user => {
-            return user
-                .populate('cart.items.productId')
-                .execPopulate()
-                .then(user => {
-                    const products = user.cart.items.map(i => {
-                        if (city === "Karachi") {
-                            shippingCost = shippingCost + i.productId.shippingInKarachi
-                        } else {
-                            shippingCost = shippingCost + i.productId.shippingCost
-                        }
-                        quantity = i.quantity;
-                        price = price + (i.productId.price * quantity);
-                        return { quantity: i.quantity, product: { ...i.productId._doc } };
-                    });
-                    const order = new Order({
-                        user: {
-                            userId: user._id,
-                            fullName: user.name,
-                            addressLine1: user.addressLine1,
-                            addressLine2: user.addressLine2,
-                            city: user.city,
-                            state: user.state,
-                            zip: user.zip,
-                            country: 'Pakistan',
-                            phoneNumber: user.phoneNumber,
-                            delieveryInformation: user.delieveryInformation,
-                        },
-                        products: products,
-                        shippingCost: shippingCost,
-                        totalPrice: price + shippingCost
-                    });
-                    return order.save();
+    stripe.tokens.create(
+        {
+            card: {
+                number: cardNumber,
+                exp_month: month,
+                exp_year: year,
+                cvc: cvv,
+                name: name,
+                address_line1: addressLine1,
+                address_line2: addressLine2,
+                address_city: city,
+                address_state: state,
+                address_zip: zip,
+                address_country: 'Pakistan'
+            },
+        },
+        function (err, token) {
+            if (err) {
+                console.log(err);
+                res.status(422).json({
+                    message: err.raw.message,
                 })
-                .then(result => {
-                    stripe.tokens.create(
-                        {
-                            card: {
-                                number: cardNumber,
-                                exp_month: month,
-                                exp_year: year,
-                                cvc: cvv,
-                                name: name,
-                                address_line1: addressLine1,
-                                address_line2: addressLine2,
-                                address_city: city,
-                                address_state: state,
-                                address_zip: zip,
-                                address_country: 'Pakistan'
-                            },
-                        },
-                        function (err, token) {
-                            if (err) {
-                                console.log(err);
-                            }
-                            console.log(token.id);
+                return false;
+            }
+            console.log(token.id);
+            User
+                .findById(req.userId)
+                .then(user => {
+                    return user
+                        .populate('cart.items.productId')
+                        .execPopulate()
+                        .then(user => {
+                            const products = user.cart.items.map(i => {
+                                if (city === "Karachi") {
+                                    shippingCost = shippingCost + i.productId.shippingInKarachi
+                                } else {
+                                    shippingCost = shippingCost + i.productId.shippingCost
+                                }
+                                quantity = i.quantity;
+                                price = price + (i.productId.price * quantity);
+                                return { quantity: i.quantity, product: { ...i.productId._doc } };
+                            });
+                            const order = new Order({
+                                user: {
+                                    userId: user._id,
+                                    fullName: user.name,
+                                    addressLine1: user.addressLine1,
+                                    addressLine2: user.addressLine2,
+                                    city: user.city,
+                                    state: user.state,
+                                    zip: user.zip,
+                                    country: 'Pakistan',
+                                    phoneNumber: user.phoneNumber,
+                                    delieveryInformation: user.delieveryInformation,
+                                },
+                                products: products,
+                                shippingCost: shippingCost,
+                                totalPrice: price + shippingCost
+                            });
+                            return order.save();
+                        })
+                        .then(result => {
                             stripe.charges.create(
                                 {
                                     amount: (price + shippingCost) * 100,
@@ -336,15 +357,22 @@ exports.charge = async (req, res, next) => {
                                         console.log(err);
                                     }
                                     if (charge) {
+                                        Order.findById(result._id).then(order => { order.receipt = charge.receipt_url; order.save(); })
                                         user
                                             .clearCart()
-                                            .then(result => {
+                                            .then(() => {
                                                 res.status(201).json({
                                                     message: 'Order Placed',
+                                                    id: result._id.toString(),
                                                 });
                                             })
                                             .catch(err => {
                                                 console.log(err);
+                                                if (error.stausCode === 422) {
+                                                    res.status(422).json({
+                                                        message: err
+                                                    })
+                                                }
                                                 res.status(500).json({
                                                     message: 'Internal Server Error',
                                                 });
@@ -352,14 +380,39 @@ exports.charge = async (req, res, next) => {
                                     }
                                 }
                             );
-                        }
-                    );
-                })
-                .catch(err => {
-                    console.log(err);
-                    res.status(500).json({
-                        message: 'Internal Server Error',
-                    });
-                })
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            if (err.stausCode === 422) {
+                                res.status(422).json({
+                                    message: err
+                                })
+                            }
+                            res.status(500).json({
+                                message: 'Internal Server Error',
+                            });
+                        })
+
+                });
         });
+}
+
+exports.getOrderRecipt = (req, res, next) => {
+    const orderId = req.params.orderId;
+    console.log(orderId);
+
+    Order
+        .findById(orderId)
+        .then(order => {
+            if (!order) {
+
+            }
+            console.log(order);
+            res.status(200).json({
+                message: order.receipt,
+            })
+        })
+        .catch(err => {
+            console.log(err);
+        })
 }

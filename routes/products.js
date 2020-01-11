@@ -21,6 +21,50 @@ router.post('/post-cart',
 );
 router.get('/get-cart', isAuth, productController.getCart);
 router.post('/post-delete-from-cart', isAuth, productController.postDeleteFromCart);
-router.post('/charge', isAuth, productController.charge);
+router.post('/charge',
+    [
+        body('name')
+            .notEmpty()
+            .isLength({ min: 3 })
+            .isString()
+            .withMessage("Please enter correct name"),
+        body('cardNumber')
+            .isCreditCard()
+            .withMessage("Please enter correct card number"),
+        body('month')
+            .isNumeric()
+            .isLength({ min: 1, max: 2 })
+            .withMessage("Month incorrect"),
+        body('year')
+            .isNumeric()
+            .isLength({ min: 4, max: 4 })
+            .withMessage("Year incorrect"),
+        body('cvv')
+            .isNumeric()
+            .isLength({ min: 3, max: 3 })
+            .withMessage("incorrect cvv"),
+        body('addressLine1')
+            .isString()
+            .isLength({ min: 3 })
+            .withMessage("Address is incorrect"),
+        body('city')
+            .notEmpty()
+            .isString()
+            .isLength({ min: 2 })
+            .withMessage("incorrect city name"),
+        body('state')
+            .notEmpty()
+            .isString()
+            .isLength({ min: 2 })
+            .withMessage("incorrect state name"),
+        body('zip')
+            .notEmpty()
+            .isNumeric()
+            .withMessage("incorrect zip"),
+    ],
+    isAuth, productController.charge
+);
+
+router.get('/get-order-recipt/:orderId', isAuth, productController.getOrderRecipt);
 
 module.exports = router;

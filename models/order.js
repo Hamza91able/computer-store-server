@@ -62,6 +62,10 @@ const orderSchema = new Schema({
     totalPrice: {
         type: Number,
         required: true,
+    },
+    receipt: {
+        type: String,
+        required: false,
     }
 });
 
