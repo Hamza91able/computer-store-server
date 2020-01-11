@@ -83,6 +83,7 @@ exports.getDelieveryAddress = (req, res, next) => {
                     zip: user.zip,
                     phoneNumber: user.phoneNumber,
                     delieveryInformation: user.delieveryInformation,
+                    email: user.email,
                 }
             })
         })

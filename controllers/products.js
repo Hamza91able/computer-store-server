@@ -8,6 +8,11 @@ const Order = require('../models/order');
 
 
 exports.getProductByCategory = (req, res, next) => {
+    const currentPage = req.query.page || 1;
+    const perPage = 10;
+    let totalItems;
+    console.log(currentPage);
+
     const categoryName = req.params.categoryName;
     const order = req.params.order;
     let sort = 'price'
@@ -16,20 +21,21 @@ exports.getProductByCategory = (req, res, next) => {
     } else {
         sort = '-price'
     }
-    let totalDocuments;
 
     Products
         .find({ category: categoryName })
         .countDocuments()
-        .then(totalDocuments => {
-            totalDocuments = totalDocuments;
+        .then(count => {
+            totalItems = count;
             return Products
                 .find({ category: categoryName })
+                .skip((currentPage - 1) * perPage)
+                .limit(perPage)
                 .sort(sort)
                 .then(products => {
                     res.status(200).json({
                         products: products,
-                        totalDocuments: totalDocuments
+                        totalItems: totalItems
                     });
                 })
         })
