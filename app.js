@@ -11,6 +11,7 @@ const categoriesRoutes = require('./routes/categories');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user')
 const productRoutes = require('./routes/products');
+const orderRoutes = require('./routes/order');
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/categories', categoriesRoutes)
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/products', productRoutes);
+app.use('/order', orderRoutes);
 
 mongoose
     .connect(databaseConfiguration.connectionString, {
