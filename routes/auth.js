@@ -2,6 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 
 const User = require('../models/user');
+const isAuth = require('../middleware/is-auth');
 
 const authController = require('../controllers/auth');
 
@@ -33,5 +34,13 @@ router.put('/signup',
 
 router.post('/check-email', authController.checkEmail);
 router.post("/login", authController.login);
+router.post('/change-password',
+    [
+        body('newPassword')
+            .trim()
+            .isLength({ min: 6 })
+            .withMessage("Password must be 6 characters long"),
+    ]
+    , isAuth, authController.changePassword)
 
 module.exports = router;

@@ -116,3 +116,71 @@ exports.login = (req, res, next) => {
             }
         })
 }
+
+exports.changePassword = (req, res, next) => {
+    const password = req.body.oldPassword;
+    const newPassword = req.body.newPassword;
+    const confirmPassword = req.body.confirmPassword;
+
+    if (password === newPassword) {
+        res.status(422).json({
+            message: "Old password and new password can't be same",
+        })
+        return false;
+    }
+
+    if (newPassword !== confirmPassword) {
+        res.status(422).json({
+            message: "New password and confirm password not equal",
+        })
+        return false;
+    } else {
+        User
+            .findById(req.userId)
+            .then(user => {
+                if (!user) {
+                    const error = new Error("Email doesn't exist");
+                    error.statusCode = 401;
+                    throw error;
+                }
+                return bcrypt.compare(password, user.password);
+            })
+            .then(isEqual => {
+                if (!isEqual) {
+                    const error = new Error("Invalid Password");
+                    error.statusCode = 401;
+                    throw error;
+                }
+                return bcrypt.hash(newPassword, 12)
+            })
+            .then(hashedPassword => {
+                User
+                    .findById(req.userId)
+                    .then(user => {
+                        user.password = hashedPassword
+                        return user.save()
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Password Changed!",
+                        })
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            message: "Internal Server Error",
+                        })
+                    })
+            })
+            .catch(err => {
+                if (err.statusCode === 401) {
+                    res.status(401).json({
+                        message: "Invalid Password",
+                    })
+                } else {
+                    res.status(500).json({
+                        message: "Internal Server Error",
+                    })
+                }
+            })
+    }
+}
