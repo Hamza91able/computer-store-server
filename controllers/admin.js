@@ -7,6 +7,7 @@ const Product = require('../models/products');
 const AppbarCategories = require('../models/appbarCategories');
 const FeaturedProduct = require('../models/featuredProducts');
 const BannerPictures = require('../models/bannerPictures');
+const Order = require('../models/order');
 
 exports.addCategory = (req, res, next) => {
     const categoryName = req.body.name;
@@ -401,4 +402,82 @@ exports.changeBanners = (req, res, next) => {
             })
         })
     })
+}
+
+exports.getPendingOrders = (req, res, next) => {
+
+    Order
+        .find({ delievery: 'Pending' })
+        .then(orders => {
+            res.status(200).json({
+                orders: orders,
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        });
+}
+
+exports.getCompletedOrders = (req, res, next) => {
+
+    Order
+        .find({ delievery: 'Delievered' })
+        .then(orders => {
+            res.status(200).json({
+                orders: orders,
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        });
+}
+
+exports.getOrder = (req, res, next) => {
+    const orderId = req.params.orderId;
+
+    Order
+        .findById(orderId)
+        .then(order => {
+            if (!order) {
+
+            }
+            res.status(200).json({
+                order
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        });
+}
+
+exports.markAsDelievered = (req, res, next) => {
+    const orderId = req.body.orderId;
+
+    Order
+        .findById(orderId)
+        .then(order => {
+            if (!order) {
+
+            }
+            order.delievery = "Delievered";
+            order.status = "Order Completed";
+            return order.save();
+        })
+        .then(result => {
+            res.status(201).json({
+                message: 'Marked as Delievered. Order Completed',
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).sjon({
+                message: 'Internal Server Error',
+            });
+        });
 }

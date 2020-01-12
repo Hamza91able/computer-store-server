@@ -382,7 +382,9 @@ exports.charge = async (req, res, next) => {
                                 },
                                 products: products,
                                 shippingCost: shippingCost,
-                                totalPrice: price + shippingCost
+                                totalPrice: price + shippingCost,
+                                delievery: "Pending",
+                                status: "Delievery Pending"
                             });
                             return order.save();
                         })

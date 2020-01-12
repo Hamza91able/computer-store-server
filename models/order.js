@@ -66,7 +66,15 @@ const orderSchema = new Schema({
     receipt: {
         type: String,
         required: false,
-    }
+    },
+    delievery: {
+        type: String,
+        required: true
+    },
+    status: {
+        type: String,
+        required: true
+    },
 },
     {
         timestamps: true
