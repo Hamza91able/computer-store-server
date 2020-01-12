@@ -373,7 +373,6 @@ exports.changeBanners = (req, res, next) => {
             if (imageUrlsFromFirebase.length === imageUrls.length) {
 
                 imageUrlsFromFirebase.forEach(image => {
-                    console.log(image);
                     const bannerPictures = new BannerPictures({
                         src: image,
                     });
@@ -477,6 +476,24 @@ exports.markAsDelievered = (req, res, next) => {
         .catch(err => {
             console.log(err);
             res.status(500).sjon({
+                message: 'Internal Server Error',
+            });
+        });
+}
+
+exports.deleteBanner = (req, res, next) => {
+    const bannerId = req.body.bannerId;
+
+    BannerPictures
+        .findByIdAndDelete(bannerId)
+        .then(result => {
+            res.status(201).json({
+                message: "Banner Deleted",
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
                 message: 'Internal Server Error',
             });
         });

@@ -18,5 +18,6 @@ router.get('/get-pending-orders', adminController.getPendingOrders);
 router.get('/get-completed-orders', adminController.getCompletedOrders);
 router.get('/get-order/:orderId', adminController.getOrder);
 router.post('/mark-as-delievered', isAuth, adminController.markAsDelievered);
+router.post('/delete-banner', isAuth, adminController.deleteBanner);
 
 module.exports = router;
