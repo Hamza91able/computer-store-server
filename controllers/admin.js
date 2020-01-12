@@ -253,7 +253,6 @@ exports.addAppbarCategories = (req, res, next) => {
 
 exports.addFeaturedProduct = (req, res, next) => {
     const productId = req.body.productId;
-    console.log(productId);
 
     FeaturedProduct
         .find({ productId: productId })
@@ -286,10 +285,15 @@ exports.addFeaturedProduct = (req, res, next) => {
             });
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                message: 'Internal Server Error',
-            });
+            if (err.statusCode === 401) {
+                res.status(500).json({
+                    message: 'Product Already Featured',
+                });
+            } else {
+                res.status(500).json({
+                    message: 'Internal Server Error',
+                });
+            }
         });
 }
 
@@ -308,6 +312,31 @@ exports.removeFromFeatured = (req, res, next) => {
             console.log(err);
             res.status(500).json({
                 message: 'Internal Server Error',
+            });
+        });
+}
+
+exports.ChangeStock = (req, res, next) => {
+    const prodId = req.body.prodId;
+    const newStock = req.body.newStock;
+
+    Product
+        .findById(prodId)
+        .then(product => {
+            if (!product) {
+
+            }
+            product.stock = newStock;
+            return product.save();
+        })
+        .then(result => {
+            res.status(201).json({
+                message: "Stock Updated",
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Interal Server Error',
             });
         });
 }

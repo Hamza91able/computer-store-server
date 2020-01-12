@@ -12,5 +12,6 @@ router.post('/post-product', isAuth, adminController.postProduct);
 router.post('/add-category-to-appbar', isAuth, adminController.addAppbarCategories);
 router.post('/feature-product', isAuth, adminController.addFeaturedProduct);
 router.post('/remove-from-featured', isAuth, adminController.removeFromFeatured);
+router.post('/change-stock', isAuth, adminController.ChangeStock);
 
 module.exports = router;

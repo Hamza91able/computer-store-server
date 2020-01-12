@@ -152,6 +152,24 @@ exports.getProductsByBrands = (req, res, next) => {
         });
 }
 
+exports.getOutOfStockProducts = (req, res, next) => {
+    const categoryName = req.params.categoryName;
+
+    Products
+        .find({ category: categoryName, stock: 0 })
+        .then(products => {
+            res.status(200).json({
+                products: products,
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: "Internal Server Error",
+            });
+        });
+}
+
 exports.postCart = (req, res, nxet) => {
     const errors = validationResult(req);
     const prodId = req.body.prodId;

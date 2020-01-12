@@ -11,6 +11,7 @@ router.get('/get-products-by-category-no-pagination/:categoryName', productContr
 router.get('/get-specific-product/:id', productController.getSpecificProduct);
 router.get('/get-products-by-sub-category/:name/:order', productController.getProductsBySubCategory);
 router.get('/get-products-by-brand/:name/:order', productController.getProductsByBrands);
+router.get('/get-out-of-stock-products/:categoryName', productController.getOutOfStockProducts);
 router.post('/post-cart',
     [
         body("quantity")
