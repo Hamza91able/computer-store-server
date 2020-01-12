@@ -6,6 +6,7 @@ const Categories = require('../models/categories');
 const Product = require('../models/products');
 const AppbarCategories = require('../models/appbarCategories');
 const FeaturedProduct = require('../models/featuredProducts');
+const BannerPictures = require('../models/bannerPictures');
 
 exports.addCategory = (req, res, next) => {
     const categoryName = req.body.name;
@@ -339,4 +340,65 @@ exports.ChangeStock = (req, res, next) => {
                 message: 'Interal Server Error',
             });
         });
+}
+
+exports.changeBanners = (req, res, next) => {
+    let imageUrls = [];
+    req.files.forEach(file => {
+        imageUrls.push(file.path.replace("\\", "/"));
+    })
+    let imageUrlsFromFirebase = [];
+
+    if (req.files.length === 0) {
+        const error = new Error("No images uploaded");
+        error.statusCode = 403;
+        throw error;
+    }
+
+    imageUrls.forEach(image => {
+        const form = new FormData();
+        form.append('image', fs.createReadStream(image));
+        const formHeaders = form.getHeaders();
+        axios({
+            url: `https://us-central1-computer-store-264522.cloudfunctions.net/uploadFile`,
+            method: "POST",
+            data: form,
+            headers: {
+                ...formHeaders,
+            },
+        }).then(response => {
+            imageUrlsFromFirebase.push(response.data.imageUrl);
+        }).then(() => {
+            if (imageUrlsFromFirebase.length === imageUrls.length) {
+
+                imageUrlsFromFirebase.forEach(image => {
+                    console.log(image);
+                    const bannerPictures = new BannerPictures({
+                        src: image,
+                    });
+
+                    bannerPictures.save();
+                })
+
+                imageUrls.forEach(image => {
+                    fs.unlink(image, (err) => {
+                        if (err) {
+                            console.error(err)
+                            return
+                        }
+                    })
+
+                    //file removed
+                })
+                res.status(201).json({
+                    message: 'Images Uploded'
+                })
+            }
+        }).catch(err => {
+            console.log(err);
+            res.status(200).json({
+                message: 'Error Occoured. No images provided',
+            })
+        })
+    })
 }
