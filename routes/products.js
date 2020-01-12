@@ -7,6 +7,7 @@ const isAuth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/get-products-by-category/:categoryName/:order', productController.getProductByCategory);
+router.get('/get-products-by-category-no-pagination/:categoryName', productController.getProductByCategoryNoPagination);
 router.get('/get-specific-product/:id', productController.getSpecificProduct);
 router.get('/get-products-by-sub-category/:name/:order', productController.getProductsBySubCategory);
 router.get('/get-products-by-brand/:name/:order', productController.getProductsByBrands);
@@ -64,7 +65,7 @@ router.post('/charge',
     ],
     isAuth, productController.charge
 );
-
 router.get('/get-order-recipt/:orderId', isAuth, productController.getOrderRecipt);
+router.get('/get-featured-products', productController.getFeaturedProducts);
 
 module.exports = router;

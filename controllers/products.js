@@ -5,6 +5,7 @@ const { validationResult } = require('express-validator');
 const User = require('../models/user');
 const Products = require('../models/products');
 const Order = require('../models/order');
+const FeaturedProduct = require('../models/featuredProducts');
 
 
 exports.getProductByCategory = (req, res, next) => {
@@ -38,6 +39,25 @@ exports.getProductByCategory = (req, res, next) => {
                         totalItems: totalItems
                     });
                 })
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: "Internal Server Error",
+            });
+        });
+}
+
+exports.getProductByCategoryNoPagination = (req, res, next) => {
+    const categoryName = req.params.categoryName;
+
+    Products
+        .find({ category: categoryName })
+        .sort("price")
+        .then(products => {
+            res.status(200).json({
+                products: products,
+            });
         })
         .catch(err => {
             console.log(err);
@@ -421,4 +441,39 @@ exports.getOrderRecipt = (req, res, next) => {
         .catch(err => {
             console.log(err);
         })
+}
+
+exports.getFeaturedProducts = (req, res, nxet) => {
+    let productArray = [];
+
+    FeaturedProduct
+        .find()
+        .then(products => {
+            products.forEach((productId, index) => {
+                productId
+                    .populate('productId')
+                    .execPopulate()
+                    .then(product => {
+
+                        productArray.push(product);
+                        if (products.length === productArray.length) {
+                            res.status(200).json({
+                                products: productArray
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    })
+            })
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        });
 }

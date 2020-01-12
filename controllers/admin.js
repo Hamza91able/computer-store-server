@@ -5,6 +5,7 @@ const fs = require('fs');
 const Categories = require('../models/categories');
 const Product = require('../models/products');
 const AppbarCategories = require('../models/appbarCategories');
+const FeaturedProduct = require('../models/featuredProducts');
 
 exports.addCategory = (req, res, next) => {
     const categoryName = req.body.name;
@@ -247,5 +248,66 @@ exports.addAppbarCategories = (req, res, next) => {
                     message: "Internal Server Error",
                 });
             }
+        });
+}
+
+exports.addFeaturedProduct = (req, res, next) => {
+    const productId = req.body.productId;
+    console.log(productId);
+
+    FeaturedProduct
+        .find({ productId: productId })
+        .then(product => {
+            console.log(product);
+            if (product.length > 0) {
+                const error = new Error("Already featured");
+                error.statusCode = 401;
+                throw error;
+            }
+            return Product
+                .findById(productId)
+        })
+        .then(product => {
+            if (!product) {
+                const error = new Error("Product does not exist");
+                error.statusCode = 421;
+                throw err;
+            }
+
+            const featuredProduct = new FeaturedProduct({
+                productId: productId,
+            })
+
+            return featuredProduct.save();
+        })
+        .then(result => {
+            res.status(201).json({
+                message: 'Added to featured products',
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        });
+}
+
+exports.removeFromFeatured = (req, res, next) => {
+    const prodId = req.body.prodId;
+    console.log(prodId)
+
+    FeaturedProduct
+        .findByIdAndDelete(prodId)
+        .then(result => {
+            res.status(200).json({
+                message: 'Deleted from featured products',
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
         });
 }
