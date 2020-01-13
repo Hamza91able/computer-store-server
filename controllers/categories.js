@@ -5,6 +5,7 @@ exports.getCategories = (req, res, next) => {
 
     Categories
         .find()
+        .sort('name')
         .then(categories => {
             res.status(200).json({
                 categories,
