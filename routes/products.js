@@ -69,5 +69,6 @@ router.post('/charge',
 router.get('/get-order-recipt/:orderId', isAuth, productController.getOrderRecipt);
 router.get('/get-featured-products', productController.getFeaturedProducts);
 router.get('/get-banners', productController.getBanners);
+router.get('/get-products-by-keyword/:keyWord', productController.searchProducts);
 
 module.exports = router;

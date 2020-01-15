@@ -514,3 +514,24 @@ exports.getBanners = (req, res, next) => {
             });
         });
 }
+
+exports.searchProducts = (req, res, next) => {
+    const keyWord = req.params.keyWord;
+
+    Products
+        .find({
+            $text: {
+                $search: `\"${keyWord}\"`
+            }
+        })
+        .then(products => {
+            res.status(200).json({
+                products: products,
+            })
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Internal Server Error',
+            })
+        })
+}
