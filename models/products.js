@@ -53,6 +53,22 @@ const productSchema = new Schema({
     shippingInKarachi: {
         type: Number,
         required: true,
+    },
+    discountPercentage: {
+        type: Number,
+        required: false,
+    },
+    priceAfterDiscount: {
+        type: Number,
+        required: false,
+    },
+    saleEndDate: {
+        type: Date,
+        required: false,
+    },
+    onSale: {
+        type: Boolean,
+        required: false,
     }
 });
 

@@ -1,6 +1,7 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const moment = require('moment');
 
 const Categories = require('../models/categories');
 const Product = require('../models/products');
@@ -423,6 +424,7 @@ exports.getCompletedOrders = (req, res, next) => {
 
     Order
         .find({ delievery: 'Delievered' })
+        .sort('-_id')
         .then(orders => {
             res.status(200).json({
                 orders: orders,
@@ -496,5 +498,83 @@ exports.deleteBanner = (req, res, next) => {
             res.status(500).json({
                 message: 'Internal Server Error',
             });
+        });
+}
+
+exports.putOnSale = (req, res, next) => {
+    const prodId = req.body.prodId;
+    const percentage = req.body.percentage;
+    const saleEndDate = req.body.saleEndDate;
+
+    if (moment(saleEndDate).toDate() <= moment().add(1, 'days')._d) {
+        const error = new Error("Date must be in future");
+        error.statusCode = 421;
+        throw error;
+    }
+
+    Product
+        .findById(prodId)
+        .then(product => {
+            product.discountPercentage = percentage;
+            product.priceAfterDiscount = product.price - (product.price * (percentage / 100));
+            product.saleEndDate = moment(saleEndDate).toDate().toISOString();
+            product.onSale = true;
+
+            return product.save();
+        })
+        .then(result => {
+            res.status(201).json({
+                message: "Succesfully Put On Sale",
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            if (err.statusCode === 421) {
+                res.status(421).json({
+                    message: 'Date must be in future',
+                });
+            } else {
+                res.status(500).json({
+                    message: 'Internal Server Error',
+                });
+            }
+        });
+}
+
+exports.endSale = (req, res, next) => {
+    const prodId = req.params.prodId
+
+    Product
+        .findById(prodId)
+        .then(product => {
+            console.log(product.onSale);
+            if (!product.onSale) {
+                const error = new Error("Item not on sale");
+                error.statusCode = 421;
+                throw error;
+            }
+            product.discountPercentage = null;
+            product.priceAfterDiscount = null;
+            product.saleEndDate = null;
+            product.onSale = false;
+
+            return product.save();
+        })
+        .then(result => {
+            res.status(201).json({
+                message: "Succesfully Put On Sale",
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            if (err.statusCode === 421) {
+                res.status(421).json({
+                    message: 'Item not on sale',
+                });
+            } else {
+                res.status(500).json({
+                    message: 'Internal Server Error',
+                });
+            }
         });
 }
