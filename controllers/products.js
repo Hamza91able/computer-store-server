@@ -364,7 +364,11 @@ exports.charge = async (req, res, next) => {
                                     shippingCost = shippingCost + i.productId.shippingCost
                                 }
                                 quantity = i.quantity;
-                                price = price + (i.productId.price * quantity);
+                                if (i.productId.onSale) {
+                                    price = price + (i.productId.priceAfterDiscount * quantity);
+                                } else {
+                                    price = price + (i.productId.price * quantity);
+                                }
                                 return { quantity: i.quantity, product: { ...i.productId._doc } };
                             });
                             const order = new Order({
