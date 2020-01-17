@@ -539,3 +539,19 @@ exports.searchProducts = (req, res, next) => {
             })
         })
 }
+
+exports.getOnSaleProducts = (req, res, next) => {
+
+    Products
+        .find({ onSale: true })
+        .then(products => {
+            res.status(200).json({
+                products: products,
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        });
+}

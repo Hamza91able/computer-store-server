@@ -70,5 +70,6 @@ router.get('/get-order-recipt/:orderId', isAuth, productController.getOrderRecip
 router.get('/get-featured-products', productController.getFeaturedProducts);
 router.get('/get-banners', productController.getBanners);
 router.get('/get-products-by-keyword/:keyWord', productController.searchProducts);
+router.get('/get-on-sale-products', productController.getOnSaleProducts);
 
 module.exports = router;
