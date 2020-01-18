@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const uuidv4 = require('uuid/v4')
+const CronJob = require('cron').CronJob;
+const moment = require('moment');
 
 const databaseConfiguration = require('./utilities/database');
 
@@ -12,6 +14,8 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user')
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/order');
+
+const Product = require('./models/products');
 
 const app = express();
 
@@ -55,6 +59,30 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/products', productRoutes);
 app.use('/order', orderRoutes);
+
+const endSale = new CronJob('0 */10 * * * *', function () {
+    const d = new Date().toISOString();
+    console.log(`Checking if any sale's need to end. Every 10 Minutes: ${d}`);
+
+    Product
+        .find({ onSale: true })
+        .then(products => {
+            if (products.length > 0)
+                products.forEach(product => {
+                    if (d >= moment(product.saleEndDate).toISOString()) {
+                        product.saleEndDate = null;
+                        product.onSale = false;
+                        product.discountPercentage = null;
+                        product.priceAfterDiscount = null;
+                        console.log("Sale Ended for ", product.title);
+                        product.save();
+                    } else {
+                        console.log("Sale not ended for ", product.title);
+                    }
+                })
+        })
+});
+endSale.start();
 
 mongoose
     .connect(databaseConfiguration.connectionString, {
