@@ -54,6 +54,10 @@ const userSchema = new Schema({
         type: String,
         required: false,
     },
+    boughtItems: {
+        type: Array,
+        required: false,
+    },
     cart: {
         items: [{
             productId: {

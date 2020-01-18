@@ -323,6 +323,7 @@ exports.charge = async (req, res, next) => {
     let shippingCost = 0;
     let price = 0;
     let quantity = 0;
+    const productIds = [];
     console.log(req.body)
 
     stripe.tokens.create(
@@ -369,6 +370,7 @@ exports.charge = async (req, res, next) => {
                                 } else {
                                     price = price + (i.productId.price * quantity);
                                 }
+                                productIds.push(i.productId._doc._id);
                                 return { quantity: i.quantity, product: { ...i.productId._doc } };
                             });
                             const order = new Order({
@@ -412,6 +414,7 @@ exports.charge = async (req, res, next) => {
                                         user
                                             .clearCart()
                                             .then(() => {
+                                                User.findById(req.userId).then(user => { user.boughtItems.push(...productIds); user.save() })
                                                 res.status(201).json({
                                                     message: 'Order Placed',
                                                     id: result._id.toString(),
@@ -554,4 +557,88 @@ exports.getOnSaleProducts = (req, res, next) => {
                 message: 'Internal Server Error',
             });
         });
+}
+
+exports.saveReview = (req, res, next) => {
+    const prodId = req.body.prodId;
+    const rating = req.body.rating;
+    const title = req.body.title;
+    const pros = req.body.pros;
+    const cons = req.body.cons;
+    const overallReview = req.body.overallReview;
+    const postedOn = new Date().toISOString();
+    let verifiedOwner = false;
+    let edit = false;
+    let indexToEdit;
+    let totalRating = 0
+    let averageRating = 0;
+
+    User
+        .findById(req.userId)
+        .then(user => {
+
+            for (let i = 0; i < user.boughtItems.length; i++) {
+                if (user.boughtItems[i].equals(prodId)) {
+                    verifiedOwner = true;
+                }
+            }
+
+            Products
+                .findById(prodId)
+                .then(product => {
+
+                    if (product.reviews.length === 0) {
+                        totalRating = totalRating + rating
+                    }
+
+                    for (let i = 0; i < product.reviews.length; i++) {
+                        if (product.reviews[i].userId.equals(req.userId)) {
+                            edit = true;
+                            indexToEdit = i;
+                            totalRating = totalRating + rating - product.reviews[i].rating
+                        } else {
+                            console.log(product.reviews[i].rating);
+                            totalRating = totalRating + rating + product.reviews[i].rating
+                        }
+                    }
+
+                    if (edit) {
+                        product.reviews[indexToEdit].rating = rating;
+                        product.reviews[indexToEdit].title = title;
+                        product.reviews[indexToEdit].pros = pros;
+                        product.reviews[indexToEdit].cons = cons;
+                        product.reviews[indexToEdit].overallReview = overallReview;
+                        product.reviews[indexToEdit].name = user.name;
+                        product.reviews[indexToEdit].postenOn = postedOn;
+                        product.reviews[indexToEdit].verifiedOwner = verifiedOwner;
+                        product.reviews[indexToEdit].userId = user._id;
+                    } else {
+                        product.reviews.push({
+                            rating,
+                            title,
+                            pros,
+                            cons,
+                            overallReview,
+                            name: user.name,
+                            postedOn,
+                            verifiedOwner,
+                            userId: user._id,
+                        })
+                    }
+                    averageRating = totalRating / product.reviews.length
+                    product.averageRating = averageRating;
+                    return product.save()
+                })
+                .then(result => {
+                    res.status(201).json({
+                        message: 'Review Created',
+                    })
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        message: 'Internal Server Error',
+                    });
+                })
+        })
 }

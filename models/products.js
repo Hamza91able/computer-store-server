@@ -69,7 +69,51 @@ const productSchema = new Schema({
     onSale: {
         type: Boolean,
         required: false,
-    }
+    },
+    averageRating: {
+        type: Number,
+        required: false
+    },
+    reviews: [
+        {
+            rating: {
+                type: Number,
+                required: false
+            },
+            title: {
+                type: String,
+                required: false
+            },
+            pros: {
+                type: String,
+                required: false
+            },
+            cons: {
+                type: String,
+                required: false
+            },
+            overallReview: {
+                type: String,
+                required: false
+            },
+            name: {
+                type: String,
+                required: false
+            },
+            postedOn: {
+                type: Date,
+                required: false
+            },
+            verifiedOwner: {
+                type: Boolean,
+                required: false
+            },
+            userId: {
+                type: Schema.Types.ObjectId,
+                required: false
+            },
+        }
+    ]
 });
 
 module.exports = mongoose.model("Product", productSchema);
