@@ -670,3 +670,32 @@ exports.saveReview = (req, res, next) => {
                 })
         })
 }
+
+exports.deleteDeletedItemFromCart = (req, res, next) => {
+    const itemId = req.body.itemId;
+
+    User
+        .findById(req.userId)
+        .then(user => {
+            user.cart.items.map(item => {
+                if (item._id.equals(itemId)) {
+
+                }
+            })
+            for (let i = 0; i < user.cart.items.length; i++) {
+                if(user.cart.items[i]._id.equals(itemId)) {
+                    user.cart.items.splice(i, 1);
+                    user.save();
+                    res.status(201).json({
+                        message: 'Deleted Item from Cart',
+                    })
+                    break;
+                }
+            }
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Internal Server Error',
+            });
+        })
+}

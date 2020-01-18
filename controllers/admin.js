@@ -854,3 +854,36 @@ exports.addLinkToBanner = (req, res, next) => {
             })
         })
 }
+
+exports.deleteProduct = (req, res, nxet) => {
+    const prodId = req.params.prodId;
+
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Product
+                    .findByIdAndDelete(prodId)
+                    .then(result => {
+                        res.status(201).json({
+                            message: 'Product Deleted',
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    })
+            }
+        })
+        .catch(err => {
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
+}
