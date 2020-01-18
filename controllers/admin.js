@@ -9,6 +9,7 @@ const AppbarCategories = require('../models/appbarCategories');
 const FeaturedProduct = require('../models/featuredProducts');
 const BannerPictures = require('../models/bannerPictures');
 const Order = require('../models/order');
+const User = require('../models/user');
 
 exports.addCategory = (req, res, next) => {
     const categoryName = req.body.name;
@@ -17,16 +18,36 @@ exports.addCategory = (req, res, next) => {
         name: categoryName,
     })
 
-    Categories
-        .findOne({ name: categoryName })
-        .then(cat => {
-            if (!cat) {
-                category
-                    .save()
-                    .then(resut => {
-                        res.status(201).json({
-                            message: "Category Added",
-                        })
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Categories
+                    .findOne({ name: categoryName })
+                    .then(cat => {
+                        if (!cat) {
+                            category
+                                .save()
+                                .then(resut => {
+                                    res.status(201).json({
+                                        message: "Category Added",
+                                    })
+                                })
+                                .catch(err => {
+                                    console.log(err);
+                                    res.status(500).json({
+                                        message: "Internal Server Error"
+                                    })
+                                })
+                        } else {
+                            res.status(200).json({
+                                message: "Category Already Exists"
+                            })
+                        }
                     })
                     .catch(err => {
                         console.log(err);
@@ -34,16 +55,11 @@ exports.addCategory = (req, res, next) => {
                             message: "Internal Server Error"
                         })
                     })
-            } else {
-                res.status(200).json({
-                    message: "Category Already Exists"
-                })
             }
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                message: "Internal Server Error"
+            res.status(403).json({
+                message: "You're not an admin"
             })
         })
 }
@@ -52,33 +68,48 @@ exports.addSubCategory = (req, res, next) => {
     const parentCategory = req.body.parentCategory;
     const subCategory = req.body.subCategory.toLowerCase();
 
-    Categories
-        .findOne({ name: parentCategory })
-        .then(category => {
-            if (category.subCategories.indexOf(subCategory) !== -1) {
-                const error = new Error("Sub Category already exists");
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
                 error.statusCode = 403;
                 throw error;
-            }
+            } else {
+                Categories
+                    .findOne({ name: parentCategory })
+                    .then(category => {
+                        if (category.subCategories.indexOf(subCategory) !== -1) {
+                            const error = new Error("Sub Category already exists");
+                            error.statusCode = 403;
+                            throw error;
+                        }
 
-            category.subCategories.push(subCategory);
-            return category.save();
-        })
-        .then(result => {
-            res.status(201).json({
-                message: "Sub-Category Added",
-            });
+                        category.subCategories.push(subCategory);
+                        return category.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Sub-Category Added",
+                        });
+                    })
+                    .catch(err => {
+                        if (err.statusCode === 403) {
+                            res.status(200).json({
+                                message: 'Sub-Category already exists',
+                            })
+                        } else {
+                            res.status(500).json({
+                                message: 'Internal Server Error',
+                            });
+                        }
+                    })
+            }
         })
         .catch(err => {
-            if (err.statusCode === 403) {
-                res.status(200).json({
-                    message: 'Sub-Category already exists',
-                })
-            } else {
-                res.status(500).json({
-                    message: 'Internal Server Error',
-                });
-            }
+            res.status(403).json({
+                message: "You're not an admin"
+            })
         })
 }
 
@@ -86,34 +117,49 @@ exports.addBrands = (req, res, next) => {
     const parentCategory = req.body.parentCategory;
     const brand = req.body.brand.toLowerCase();
 
-    Categories
-        .findOne({ name: parentCategory })
-        .then(category => {
-            if (category.brands.indexOf(brand) !== -1) {
-                const error = new Error("Brand already exists");
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
                 error.statusCode = 403;
                 throw error;
-            }
+            } else {
+                Categories
+                    .findOne({ name: parentCategory })
+                    .then(category => {
+                        if (category.brands.indexOf(brand) !== -1) {
+                            const error = new Error("Brand already exists");
+                            error.statusCode = 403;
+                            throw error;
+                        }
 
-            category.brands.push(brand);
-            return category.save();
-        })
-        .then(result => {
-            res.status(201).json({
-                message: "Brand Added",
-            });
+                        category.brands.push(brand);
+                        return category.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Brand Added",
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        if (err.statusCode === 403) {
+                            res.status(200).json({
+                                message: 'Brand already exists',
+                            })
+                        } else {
+                            res.status(500).json({
+                                message: 'Internal Server Error',
+                            });
+                        }
+                    })
+            }
         })
         .catch(err => {
-            console.log(err);
-            if (err.statusCode === 403) {
-                res.status(200).json({
-                    message: 'Brand already exists',
-                })
-            } else {
-                res.status(500).json({
-                    message: 'Internal Server Error',
-                });
-            }
+            res.status(403).json({
+                message: "You're not an admin"
+            })
         })
 }
 
@@ -142,67 +188,82 @@ exports.postProduct = (req, res, next) => {
         throw error;
     }
 
-    imageUrls.forEach(image => {
-        const form = new FormData();
-        form.append('image', fs.createReadStream(image));
-        const formHeaders = form.getHeaders();
-        axios({
-            url: `https://us-central1-computer-store-264522.cloudfunctions.net/uploadFile`,
-            method: "POST",
-            data: form,
-            headers: {
-                ...formHeaders,
-            },
-        }).then(response => {
-            imageUrlsFromFirebase.push(response.data.imageUrl);
-        }).then(() => {
-            if (imageUrlsFromFirebase.length === imageUrls.length) {
-                const product = new Product({
-                    title,
-                    category,
-                    subCategory,
-                    brand,
-                    bulletPoints,
-                    price,
-                    pictures: imageUrlsFromFirebase,
-                    stock,
-                    overview,
-                    specifications,
-                    soldAndShippedBy,
-                    shippingCost,
-                    shippingInKarachi
-                });
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                imageUrls.forEach(image => {
+                    const form = new FormData();
+                    form.append('image', fs.createReadStream(image));
+                    const formHeaders = form.getHeaders();
+                    axios({
+                        url: `https://us-central1-computer-store-264522.cloudfunctions.net/uploadFile`,
+                        method: "POST",
+                        data: form,
+                        headers: {
+                            ...formHeaders,
+                        },
+                    }).then(response => {
+                        imageUrlsFromFirebase.push(response.data.imageUrl);
+                    }).then(() => {
+                        if (imageUrlsFromFirebase.length === imageUrls.length) {
+                            const product = new Product({
+                                title,
+                                category,
+                                subCategory,
+                                brand,
+                                bulletPoints,
+                                price,
+                                pictures: imageUrlsFromFirebase,
+                                stock,
+                                overview,
+                                specifications,
+                                soldAndShippedBy,
+                                shippingCost,
+                                shippingInKarachi
+                            });
 
-                product
-                    .save()
-                    .then(result => {
-                        imageUrls.forEach(image => {
-                            fs.unlink(image, (err) => {
-                                if (err) {
-                                    console.error(err)
-                                    return
-                                }
-                            })
+                            product
+                                .save()
+                                .then(result => {
+                                    imageUrls.forEach(image => {
+                                        fs.unlink(image, (err) => {
+                                            if (err) {
+                                                console.error(err)
+                                                return
+                                            }
+                                        })
 
-                            //file removed
+                                        //file removed
+                                    })
+                                    console.log('Product saved in database.');
+                                    res.status(201).json({
+                                        message: 'Product saved in database',
+                                    });
+                                })
+                                .catch(err => {
+                                    res.status(500).json({
+                                        message: 'Internal Server Error',
+                                    });
+                                })
+                        }
+                    }).catch(err => {
+                        res.status(200).json({
+                            message: 'Error Occoured. No images provided',
                         })
-                        console.log('Product saved in database.');
-                        res.status(201).json({
-                            message: 'Product saved in database',
-                        });
                     })
-                    .catch(err => {
-                        res.status(500).json({
-                            message: 'Internal Server Error',
-                        });
-                    })
+                })
             }
-        }).catch(err => {
-            res.status(200).json({
-                message: 'Error Occoured. No images provided',
+        })
+        .catch(err => {
+            res.status(403).json({
+                message: "You're not an admin"
             })
         })
-    })
 }
 
 exports.addAppbarCategories = (req, res, next) => {
@@ -212,136 +273,196 @@ exports.addAppbarCategories = (req, res, next) => {
         name,
     })
 
-    Categories
-        .findOne({ name: name })
-        .then(category => {
-            if (!category) {
-                const error = new Error('This is not a category');
-                error.statusCode = 400;
-                throw error;
-            }
-
-            return AppbarCategories.findOne({ name: name })
-        })
-        .then(result => {
-            if (result) {
-                const error = new Error('Category already exists');
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
                 error.statusCode = 403;
                 throw error;
+            } else {
+                Categories
+                    .findOne({ name: name })
+                    .then(category => {
+                        if (!category) {
+                            const error = new Error('This is not a category');
+                            error.statusCode = 400;
+                            throw error;
+                        }
+
+                        return AppbarCategories.findOne({ name: name })
+                    })
+                    .then(result => {
+                        if (result) {
+                            const error = new Error('Category already exists');
+                            error.statusCode = 403;
+                            throw error;
+                        }
+                        return appbarCategories.save()
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Category added to appbar"
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        if (err.statusCode === 400) {
+                            res.status(400).json({
+                                message: "This is not a category",
+                            });
+                        } else if (err.statusCode === 403) {
+                            res.status(403).json({
+                                message: "Category already exists",
+                            });
+                        } else {
+                            res.status(500).json({
+                                message: "Internal Server Error",
+                            });
+                        }
+                    });
             }
-            return appbarCategories.save()
-        })
-        .then(result => {
-            res.status(201).json({
-                message: "Category added to appbar"
-            });
         })
         .catch(err => {
-            console.log(err);
-            if (err.statusCode === 400) {
-                res.status(400).json({
-                    message: "This is not a category",
-                });
-            } else if (err.statusCode === 403) {
-                res.status(403).json({
-                    message: "Category already exists",
-                });
-            } else {
-                res.status(500).json({
-                    message: "Internal Server Error",
-                });
-            }
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.addFeaturedProduct = (req, res, next) => {
     const productId = req.body.productId;
 
-    FeaturedProduct
-        .find({ productId: productId })
-        .then(product => {
-            console.log(product);
-            if (product.length > 0) {
-                const error = new Error("Already featured");
-                error.statusCode = 401;
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
                 throw error;
-            }
-            return Product
-                .findById(productId)
-        })
-        .then(product => {
-            if (!product) {
-                const error = new Error("Product does not exist");
-                error.statusCode = 421;
-                throw err;
-            }
+            } else {
+                FeaturedProduct
+                    .find({ productId: productId })
+                    .then(product => {
+                        console.log(product);
+                        if (product.length > 0) {
+                            const error = new Error("Already featured");
+                            error.statusCode = 401;
+                            throw error;
+                        }
+                        return Product
+                            .findById(productId)
+                    })
+                    .then(product => {
+                        if (!product) {
+                            const error = new Error("Product does not exist");
+                            error.statusCode = 421;
+                            throw err;
+                        }
 
-            const featuredProduct = new FeaturedProduct({
-                productId: productId,
-            })
+                        const featuredProduct = new FeaturedProduct({
+                            productId: productId,
+                        })
 
-            return featuredProduct.save();
-        })
-        .then(result => {
-            res.status(201).json({
-                message: 'Added to featured products',
-            });
+                        return featuredProduct.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: 'Added to featured products',
+                        });
+                    })
+                    .catch(err => {
+                        if (err.statusCode === 401) {
+                            res.status(500).json({
+                                message: 'Product Already Featured',
+                            });
+                        } else {
+                            res.status(500).json({
+                                message: 'Internal Server Error',
+                            });
+                        }
+                    });
+            }
         })
         .catch(err => {
-            if (err.statusCode === 401) {
-                res.status(500).json({
-                    message: 'Product Already Featured',
-                });
-            } else {
-                res.status(500).json({
-                    message: 'Internal Server Error',
-                });
-            }
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.removeFromFeatured = (req, res, next) => {
     const prodId = req.body.prodId;
     console.log(prodId)
 
-    FeaturedProduct
-        .findByIdAndDelete(prodId)
-        .then(result => {
-            res.status(200).json({
-                message: 'Deleted from featured products',
-            });
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                FeaturedProduct
+                    .findByIdAndDelete(prodId)
+                    .then(result => {
+                        res.status(200).json({
+                            message: 'Deleted from featured products',
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    });
+            }
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                message: 'Internal Server Error',
-            });
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.ChangeStock = (req, res, next) => {
     const prodId = req.body.prodId;
     const newStock = req.body.newStock;
 
-    Product
-        .findById(prodId)
-        .then(product => {
-            if (!product) {
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Product
+                    .findById(prodId)
+                    .then(product => {
+                        if (!product) {
 
+                        }
+                        product.stock = newStock;
+                        return product.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Stock Updated",
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            message: 'Interal Server Error',
+                        });
+                    });
             }
-            product.stock = newStock;
-            return product.save();
-        })
-        .then(result => {
-            res.status(201).json({
-                message: "Stock Updated",
-            });
         })
         .catch(err => {
-            res.status(500).json({
-                message: 'Interal Server Error',
-            });
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.changeBanners = (req, res, next) => {
@@ -357,148 +478,238 @@ exports.changeBanners = (req, res, next) => {
         throw error;
     }
 
-    imageUrls.forEach(image => {
-        const form = new FormData();
-        form.append('image', fs.createReadStream(image));
-        const formHeaders = form.getHeaders();
-        axios({
-            url: `https://us-central1-computer-store-264522.cloudfunctions.net/uploadFile`,
-            method: "POST",
-            data: form,
-            headers: {
-                ...formHeaders,
-            },
-        }).then(response => {
-            imageUrlsFromFirebase.push(response.data.imageUrl);
-        }).then(() => {
-            if (imageUrlsFromFirebase.length === imageUrls.length) {
-
-                imageUrlsFromFirebase.forEach(image => {
-                    const bannerPictures = new BannerPictures({
-                        src: image,
-                    });
-
-                    bannerPictures.save();
-                })
-
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
                 imageUrls.forEach(image => {
-                    fs.unlink(image, (err) => {
-                        if (err) {
-                            console.error(err)
-                            return
-                        }
-                    })
+                    const form = new FormData();
+                    form.append('image', fs.createReadStream(image));
+                    const formHeaders = form.getHeaders();
+                    axios({
+                        url: `https://us-central1-computer-store-264522.cloudfunctions.net/uploadFile`,
+                        method: "POST",
+                        data: form,
+                        headers: {
+                            ...formHeaders,
+                        },
+                    }).then(response => {
+                        imageUrlsFromFirebase.push(response.data.imageUrl);
+                    }).then(() => {
+                        if (imageUrlsFromFirebase.length === imageUrls.length) {
 
-                    //file removed
-                })
-                res.status(201).json({
-                    message: 'Images Uploded'
+                            imageUrlsFromFirebase.forEach(image => {
+                                const bannerPictures = new BannerPictures({
+                                    src: image,
+                                });
+
+                                bannerPictures.save();
+                            })
+
+                            imageUrls.forEach(image => {
+                                fs.unlink(image, (err) => {
+                                    if (err) {
+                                        console.error(err)
+                                        return
+                                    }
+                                })
+
+                                //file removed
+                            })
+                            res.status(201).json({
+                                message: 'Images Uploded'
+                            })
+                        }
+                    }).catch(err => {
+                        console.log(err);
+                        res.status(200).json({
+                            message: 'Error Occoured. No images provided',
+                        })
+                    })
                 })
             }
-        }).catch(err => {
-            console.log(err);
-            res.status(200).json({
-                message: 'Error Occoured. No images provided',
+        })
+        .catch(err => {
+            res.status(403).json({
+                message: "You're not an admin"
             })
         })
-    })
 }
 
 exports.getPendingOrders = (req, res, next) => {
 
-    Order
-        .find({ delievery: 'Pending' })
-        .then(orders => {
-            res.status(200).json({
-                orders: orders,
-            });
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Order
+                    .find({ delievery: 'Pending' })
+                    .then(orders => {
+                        res.status(200).json({
+                            orders: orders,
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    });
+            }
         })
         .catch(err => {
-            res.status(500).json({
-                message: 'Internal Server Error',
-            });
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.getCompletedOrders = (req, res, next) => {
 
-    Order
-        .find({ delievery: 'Delievered' })
-        .sort('-_id')
-        .then(orders => {
-            res.status(200).json({
-                orders: orders,
-            });
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Order
+                    .find({ delievery: 'Delievered' })
+                    .sort('-_id')
+                    .then(orders => {
+                        res.status(200).json({
+                            orders: orders,
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    });
+            }
         })
         .catch(err => {
-            res.status(500).json({
-                message: 'Internal Server Error',
-            });
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.getOrder = (req, res, next) => {
     const orderId = req.params.orderId;
 
-    Order
-        .findById(orderId)
-        .then(order => {
-            if (!order) {
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Order
+                    .findById(orderId)
+                    .then(order => {
+                        if (!order) {
 
+                        }
+                        res.status(200).json({
+                            order
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    });
             }
-            res.status(200).json({
-                order
-            });
         })
         .catch(err => {
-            res.status(500).json({
-                message: 'Internal Server Error',
-            });
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.markAsDelievered = (req, res, next) => {
     const orderId = req.body.orderId;
 
-    Order
-        .findById(orderId)
-        .then(order => {
-            if (!order) {
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Order
+                    .findById(orderId)
+                    .then(order => {
+                        if (!order) {
 
+                        }
+                        order.delievery = "Delievered";
+                        order.status = "Order Completed";
+                        return order.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: 'Marked as Delievered. Order Completed',
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        res.status(500).sjon({
+                            message: 'Internal Server Error',
+                        });
+                    });
             }
-            order.delievery = "Delievered";
-            order.status = "Order Completed";
-            return order.save();
-        })
-        .then(result => {
-            res.status(201).json({
-                message: 'Marked as Delievered. Order Completed',
-            });
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).sjon({
-                message: 'Internal Server Error',
-            });
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.deleteBanner = (req, res, next) => {
     const bannerId = req.body.bannerId;
 
-    BannerPictures
-        .findByIdAndDelete(bannerId)
-        .then(result => {
-            res.status(201).json({
-                message: "Banner Deleted",
-            });
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                BannerPictures
+                    .findByIdAndDelete(bannerId)
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Banner Deleted",
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    });
+            }
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                message: 'Internal Server Error',
-            });
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.putOnSale = (req, res, next) => {
@@ -512,69 +723,99 @@ exports.putOnSale = (req, res, next) => {
         throw error;
     }
 
-    Product
-        .findById(prodId)
-        .then(product => {
-            product.discountPercentage = percentage;
-            product.priceAfterDiscount = product.price - (product.price * (percentage / 100));
-            product.saleEndDate = moment(saleEndDate).toDate().toISOString();
-            product.onSale = true;
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                Product
+                    .findById(prodId)
+                    .then(product => {
+                        product.discountPercentage = percentage;
+                        product.priceAfterDiscount = product.price - (product.price * (percentage / 100));
+                        product.saleEndDate = moment(saleEndDate).toDate().toISOString();
+                        product.onSale = true;
 
-            return product.save();
-        })
-        .then(result => {
-            res.status(201).json({
-                message: "Succesfully Put On Sale",
-            });
+                        return product.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Succesfully Put On Sale",
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        if (err.statusCode === 421) {
+                            res.status(421).json({
+                                message: 'Date must be in future',
+                            });
+                        } else {
+                            res.status(500).json({
+                                message: 'Internal Server Error',
+                            });
+                        }
+                    });
+            }
         })
         .catch(err => {
-            console.log(err);
-            if (err.statusCode === 421) {
-                res.status(421).json({
-                    message: 'Date must be in future',
-                });
-            } else {
-                res.status(500).json({
-                    message: 'Internal Server Error',
-                });
-            }
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }
 
 exports.endSale = (req, res, next) => {
     const prodId = req.params.prodId
 
-    Product
-        .findById(prodId)
-        .then(product => {
-            console.log(product.onSale);
-            if (!product.onSale) {
-                const error = new Error("Item not on sale");
-                error.statusCode = 421;
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
                 throw error;
-            }
-            product.discountPercentage = null;
-            product.priceAfterDiscount = null;
-            product.saleEndDate = null;
-            product.onSale = false;
+            } else {
+                Product
+                    .findById(prodId)
+                    .then(product => {
+                        console.log(product.onSale);
+                        if (!product.onSale) {
+                            const error = new Error("Item not on sale");
+                            error.statusCode = 421;
+                            throw error;
+                        }
+                        product.discountPercentage = null;
+                        product.priceAfterDiscount = null;
+                        product.saleEndDate = null;
+                        product.onSale = false;
 
-            return product.save();
-        })
-        .then(result => {
-            res.status(201).json({
-                message: "Succesfully Put On Sale",
-            });
+                        return product.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: "Succesfully Put On Sale",
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        if (err.statusCode === 421) {
+                            res.status(421).json({
+                                message: 'Item not on sale',
+                            });
+                        } else {
+                            res.status(500).json({
+                                message: 'Internal Server Error',
+                            });
+                        }
+                    });
+            }
         })
         .catch(err => {
-            console.log(err);
-            if (err.statusCode === 421) {
-                res.status(421).json({
-                    message: 'Item not on sale',
-                });
-            } else {
-                res.status(500).json({
-                    message: 'Internal Server Error',
-                });
-            }
-        });
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
 }

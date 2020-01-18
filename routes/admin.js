@@ -14,12 +14,12 @@ router.post('/feature-product', isAuth, adminController.addFeaturedProduct);
 router.post('/remove-from-featured', isAuth, adminController.removeFromFeatured);
 router.post('/change-stock', isAuth, adminController.ChangeStock);
 router.post('/change-banners', isAuth, adminController.changeBanners);
-router.get('/get-pending-orders', adminController.getPendingOrders);
-router.get('/get-completed-orders', adminController.getCompletedOrders);
-router.get('/get-order/:orderId', adminController.getOrder);
+router.get('/get-pending-orders', isAuth, adminController.getPendingOrders);
+router.get('/get-completed-orders', isAuth, adminController.getCompletedOrders);
+router.get('/get-order/:orderId', isAuth, adminController.getOrder);
 router.post('/mark-as-delievered', isAuth, adminController.markAsDelievered);
 router.post('/delete-banner', isAuth, adminController.deleteBanner);
-router.post('/put-on-sale', adminController.putOnSale);
-router.get('/end-sale/:prodId', adminController.endSale);
+router.post('/put-on-sale', isAuth, adminController.putOnSale);
+router.get('/end-sale/:prodId', isAuth, adminController.endSale);
 
 module.exports = router;
