@@ -21,5 +21,6 @@ router.post('/mark-as-delievered', isAuth, adminController.markAsDelievered);
 router.post('/delete-banner', isAuth, adminController.deleteBanner);
 router.post('/put-on-sale', isAuth, adminController.putOnSale);
 router.get('/end-sale/:prodId', isAuth, adminController.endSale);
+router.post('/change-banner-link', isAuth, adminController.addLinkToBanner);
 
 module.exports = router;

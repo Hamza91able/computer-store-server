@@ -344,7 +344,6 @@ exports.addFeaturedProduct = (req, res, next) => {
                 FeaturedProduct
                     .find({ productId: productId })
                     .then(product => {
-                        console.log(product);
                         if (product.length > 0) {
                             const error = new Error("Already featured");
                             error.statusCode = 401;
@@ -393,7 +392,6 @@ exports.addFeaturedProduct = (req, res, next) => {
 
 exports.removeFromFeatured = (req, res, next) => {
     const prodId = req.body.prodId;
-    console.log(prodId)
 
     User
         .findById(req.userId)
@@ -505,6 +503,7 @@ exports.changeBanners = (req, res, next) => {
                             imageUrlsFromFirebase.forEach(image => {
                                 const bannerPictures = new BannerPictures({
                                     src: image,
+                                    link: '',
                                 });
 
                                 bannerPictures.save();
@@ -781,7 +780,6 @@ exports.endSale = (req, res, next) => {
                 Product
                     .findById(prodId)
                     .then(product => {
-                        console.log(product.onSale);
                         if (!product.onSale) {
                             const error = new Error("Item not on sale");
                             error.statusCode = 421;
@@ -811,6 +809,43 @@ exports.endSale = (req, res, next) => {
                             });
                         }
                     });
+            }
+        })
+        .catch(err => {
+            res.status(403).json({
+                message: "You're not an admin"
+            })
+        })
+}
+
+exports.addLinkToBanner = (req, res, next) => {
+    const bannerId = req.body.bannerId;
+    const link = req.body.link;
+
+    User
+        .findById(req.userId)
+        .then(user => {
+            if (!user.isAdmin) {
+                const error = new Error("You're not an admin");
+                error.statusCode = 403;
+                throw error;
+            } else {
+                BannerPictures
+                    .findById(bannerId)
+                    .then(banner => {
+                        banner.link = link;
+                        return banner.save();
+                    })
+                    .then(result => {
+                        res.status(201).json({
+                            message: 'Link Saved',
+                        });
+                    })
+                    .catch(err => {
+                        res.status(500).json({
+                            message: 'Internal Server Error',
+                        });
+                    })
             }
         })
         .catch(err => {

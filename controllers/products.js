@@ -13,7 +13,6 @@ exports.getProductByCategory = (req, res, next) => {
     const currentPage = req.query.page || 1;
     const perPage = 10;
     let totalItems;
-    console.log(currentPage);
 
     const categoryName = req.params.categoryName;
     const order = req.params.order;
@@ -298,7 +297,6 @@ exports.charge = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         console.log("Validation Failed");
-        console.log(errors);
         // const error = new Error()
         const errorArray = [];
         errors.errors.forEach(error => {
@@ -350,7 +348,6 @@ exports.charge = async (req, res, next) => {
                 })
                 return false;
             }
-            console.log(token.id);
             User
                 .findById(req.userId)
                 .then(user => {
@@ -487,7 +484,6 @@ exports.charge = async (req, res, next) => {
 
 exports.getOrderRecipt = (req, res, next) => {
     const orderId = req.params.orderId;
-    console.log(orderId);
 
     Order
         .findById(orderId)
@@ -495,7 +491,6 @@ exports.getOrderRecipt = (req, res, next) => {
             if (!order) {
 
             }
-            console.log(order);
             res.status(200).json({
                 message: order.receipt,
             })
@@ -631,7 +626,6 @@ exports.saveReview = (req, res, next) => {
                             indexToEdit = i;
                             totalRating = totalRating + rating - product.reviews[i].rating
                         } else {
-                            console.log(product.reviews[i].rating);
                             totalRating = totalRating + rating + product.reviews[i].rating
                         }
                     }

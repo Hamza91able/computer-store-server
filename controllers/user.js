@@ -25,7 +25,6 @@ exports.getUser = (req, res, next) => {
 }
 
 exports.saveUserInformation = (req, res, nxet) => {
-    console.log(req.body);
     const fullName = req.body.fullName;
     const addressLine1 = req.body.addressLine1;
     const addressLine2 = req.body.addressLine2;
