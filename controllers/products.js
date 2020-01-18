@@ -324,7 +324,7 @@ exports.charge = async (req, res, next) => {
     let price = 0;
     let quantity = 0;
     const productIds = [];
-    console.log(req.body)
+    let errorString;
 
     stripe.tokens.create(
         {
@@ -370,7 +370,7 @@ exports.charge = async (req, res, next) => {
                                 } else {
                                     price = price + (i.productId.price * quantity);
                                 }
-                                productIds.push(i.productId._doc._id);
+                                productIds.push({ id: i.productId._doc._id, quantity: i.quantity });
                                 return { quantity: i.quantity, product: { ...i.productId._doc } };
                             });
                             const order = new Order({
@@ -392,6 +392,18 @@ exports.charge = async (req, res, next) => {
                                 delievery: "Pending",
                                 status: "Delievery Pending"
                             });
+
+                            products.map(val => {
+                                if (val.product.stock >= val.quantity) {
+                                    // Do nothing
+                                } else {
+                                    errorString = `The product "${val.product.title}" does not have enought stock left.`;
+                                    const error = new Error(`The product "${val.product.title}" does not have enought stock left.`);
+                                    error.statusCode = 403;
+                                    throw error;
+                                }
+                            })
+
                             return order.save();
                         })
                         .then(result => {
@@ -414,7 +426,19 @@ exports.charge = async (req, res, next) => {
                                         user
                                             .clearCart()
                                             .then(() => {
-                                                User.findById(req.userId).then(user => { user.boughtItems.push(...productIds); user.save() })
+                                                return User.findById(req.userId).then(user => { user.boughtItems.push(...productIds); user.save() })
+                                            })
+                                            .then(result => {
+                                                productIds.forEach(productId => {
+                                                    Products
+                                                        .findById(productId.id)
+                                                        .then(product => {
+                                                            product.stock = product.stock - productId.quantity;
+                                                            product.save();
+                                                        })
+                                                })
+                                            })
+                                            .then(() => {
                                                 res.status(201).json({
                                                     message: 'Order Placed',
                                                     id: result._id.toString(),
@@ -426,10 +450,15 @@ exports.charge = async (req, res, next) => {
                                                     res.status(422).json({
                                                         message: err
                                                     })
+                                                } else if (err.statusCode === 403) {
+                                                    res.status(403).json({
+                                                        message: errorString
+                                                    })
+                                                } else {
+                                                    res.status(500).json({
+                                                        message: 'Internal Server Error',
+                                                    });
                                                 }
-                                                res.status(500).json({
-                                                    message: 'Internal Server Error',
-                                                });
                                             })
                                     }
                                 }
@@ -441,10 +470,15 @@ exports.charge = async (req, res, next) => {
                                 res.status(422).json({
                                     message: err
                                 })
+                            } else if (err.statusCode === 403) {
+                                res.status(403).json({
+                                    message: errorString
+                                })
+                            } else {
+                                res.status(500).json({
+                                    message: 'Internal Server Error',
+                                });
                             }
-                            res.status(500).json({
-                                message: 'Internal Server Error',
-                            });
                         })
 
                 });
