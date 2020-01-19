@@ -5,6 +5,7 @@ const multer = require('multer');
 const uuidv4 = require('uuid/v4')
 const CronJob = require('cron').CronJob;
 const moment = require('moment');
+const helmet = require('helmet');
 
 const databaseConfiguration = require('./utilities/database');
 
@@ -36,6 +37,8 @@ const fileFilter = (req, file, cb) => {
         cb(null, false);
     }
 }
+
+app.use(helmet());
 
 app.use(bodyParser.json());
 app.use(multer({
@@ -91,7 +94,7 @@ mongoose
     })
     .then(result => {
         console.log("Connected");
-        app.listen(8080);
+        app.listen(process.env.PORT || 8080);
     })
     .catch(err => {
         console.log(err);
