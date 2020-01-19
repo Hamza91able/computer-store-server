@@ -1,8 +1,18 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const sendgridTransport = require('nodemailer-sendgrid-transport');
+
+const sendGirdPrivateKey = require('../utilities/sendGridPrivatekey');
 
 const User = require('../models/user');
+
+const transporter = nodemailer.createTransport(sendgridTransport({
+    auth: {
+        api_key: sendGirdPrivateKey.privateKey
+    }
+}));
 
 exports.signup = (req, res, next) => {
     const errors = validationResult(req);
@@ -16,6 +26,8 @@ exports.signup = (req, res, next) => {
     const name = req.body.name;
     const email = req.body.email.toLowerCase();
     const password = req.body.password;
+
+    console.log(email);
 
     bcrypt
         .hash(password, 12)
@@ -32,6 +44,12 @@ exports.signup = (req, res, next) => {
             res.status(201).json({
                 message: "User Created!",
                 userId: result._id,
+            })
+            return transporter.sendMail({
+                to: email,
+                from: 'admin@computer-store.com',
+                subject: 'Signup Succeeded',
+                html: '<h2>Hi</h2><br/><h3>Welcome to Computer Store</h3>',
             })
         })
         .catch(err => {

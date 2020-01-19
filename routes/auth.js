@@ -19,8 +19,7 @@ router.put('/signup',
                         return Promise.reject('E-Mail Address already exists.');
                     }
                 })
-            })
-            .normalizeEmail(),
+            }),
         body('password')
             .trim()
             .isLength({ min: 6 }),
@@ -29,7 +28,7 @@ router.put('/signup',
             .not()
             .isEmpty()
     ],
-    authController.signup
+    authController.signup 
 );
 
 router.post('/check-email', authController.checkEmail);
